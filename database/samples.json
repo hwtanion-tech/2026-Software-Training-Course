@@ -1,0 +1,38 @@
+{
+  "description": "需求分析样例，不会由应用自动导入。creatorId、categoryId仅为示意，后续使用真实创建的记录ID。",
+  "categories": ["校园动态", "学术活动", "学生生活"],
+  "news": [
+    {
+      "title": "校园科技文化节活动启动",
+      "summary": "面向全校学生开展科技作品展示与交流。",
+      "body": "本条为需求分析样例，用于讨论新闻正文、作者与发布时间的展示方式。",
+      "authorName": "校园编辑部",
+      "categoryId": 1,
+      "creatorId": 1,
+      "status": "PUBLISHED",
+      "publishedAt": "2026-10-20T09:00:00",
+      "expectedPublicVisibility": true
+    },
+    {
+      "title": "学术讲座筹备消息",
+      "body": "草稿样例，前台列表和详情均不得访问。",
+      "authorName": "校园编辑部",
+      "categoryId": 2,
+      "creatorId": 1,
+      "status": "DRAFT",
+      "publishedAt": null,
+      "expectedPublicVisibility": false
+    }
+  ],
+  "notices": [
+    {
+      "title": "实验室开放时间调整通知",
+      "body": "撤回样例，前台不得继续展示。",
+      "publisherUnit": "实验中心",
+      "creatorId": 1,
+      "status": "WITHDRAWN",
+      "publishedAt": "2026-10-19T09:00:00",
+      "expectedPublicVisibility": false
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# Java / Maven
+**/target/
+*.class
+*.log
+
+# Vue / Node
+**/node_modules/
+**/dist/
+**/coverage/
+
+# Local secrets and configuration (examples are safe to commit)
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-local.properties
+
+# Editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+~$*
+
+# Local verification artifacts
+.local/
+*.pid
