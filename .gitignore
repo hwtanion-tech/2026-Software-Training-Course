@@ -26,3 +26,7 @@ Thumbs.db
 # Local verification artifacts
 .local/
 *.pid
+
+# Embedded local database files
+*.mv.db
+*.trace.db

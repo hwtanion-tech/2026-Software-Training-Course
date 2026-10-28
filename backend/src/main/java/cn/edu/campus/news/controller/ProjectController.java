@@ -8,45 +8,39 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import cn.edu.campus.news.common.ApiResponse;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api")
 public class ProjectController {
     private final DatabaseProbe databaseProbe;
+    private final String mode;
 
-    public ProjectController(DatabaseProbe databaseProbe) {
+    public ProjectController(DatabaseProbe databaseProbe, @Value("${campus.mode}") String mode) {
         this.databaseProbe = databaseProbe;
+        this.mode = mode;
     }
 
     @GetMapping("/health")
     public Health health() {
-        return new Health("UP", "campus-news-backend", "week1", "后端服务运行正常");
+        return new Health("UP", "campus-news-backend", "week2", "后端服务运行正常");
     }
 
     @GetMapping("/health/database")
-    public ResponseEntity<DatabaseProbe.Result> database() {
+    public ResponseEntity<?> database() {
         var result = databaseProbe.check();
         return ResponseEntity.status("DOWN".equals(result.status())
-                ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK).body(result);
+                ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK).body(ApiResponse.ok(result));
     }
 
     @GetMapping("/project")
-    public ProjectInfo project() {
-        return new ProjectInfo("校园新闻及通知发布系统设计及实现", "第一周 需求分析与环境准备",
-                List.of("Spring Boot", "Vue", "MySQL"),
-                List.of(new Role("访客", "浏览已发布的新闻和通知，按分类及关键词查询"),
-                        new Role("发布人员", "登录后维护本人创建的内容，发布或撤回本人内容"),
-                        new Role("管理员", "管理分类、账号及全部内容")),
-                List.of("草稿 DRAFT", "已发布 PUBLISHED", "已撤回 WITHDRAWN"),
-                List.of("需求范围、核心用例与数据清单", "前后端可启动工程及连接检查接口",
-                        "MySQL 表结构草案与样例内容", "Git 忽略规则和手动建仓指南"),
-                List.of("登录与权限验证", "新闻和通知增删改查", "发布撤回与前台可见性控制",
-                        "分类、搜索、分页与完整业务测试"));
+    public ApiResponse<?> project() {
+        return ApiResponse.ok(Map.of("title","校园新闻及通知发布系统设计及实现", "stage","week2", "mode",mode,
+                "features",List.of("登录鉴权","新闻及通知维护","发布撤回","查询分页","分类维护"),
+                "plannedFeatures",List.of("账号管理页面","第三周综合测试与报告")));
     }
 
     public record Health(String status, String service, String stage, String message) { }
-    public record Role(String name, String description) { }
-    public record ProjectInfo(String title, String phase, List<String> technologies,
-                              List<Role> roles, List<String> contentStatuses,
-                              List<String> weekOneDeliverables, List<String> plannedFeatures) { }
 }

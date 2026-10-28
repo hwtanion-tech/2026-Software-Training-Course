@@ -1,4 +1,4 @@
--- 第一周数据结构草案；仅手动导入，不由应用自动执行。
+-- 第二周沿用的四表结构；仅手动导入，不由MySQL模式自动执行。
 -- 适用 MySQL 8.0.16+。不要对已有生产库运行；先核对数据库名。
 CREATE DATABASE IF NOT EXISTS campus_news
   CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
@@ -7,7 +7,7 @@ USE campus_news;
 CREATE TABLE IF NOT EXISTS sys_user (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   username VARCHAR(50) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL COMMENT '后续认证模块生成BCrypt哈希，禁止存明文',
+  password_hash VARCHAR(255) NOT NULL COMMENT '认证模块生成BCrypt哈希，禁止存明文',
   display_name VARCHAR(50) NOT NULL,
   role VARCHAR(20) NOT NULL,
   enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -72,5 +72,6 @@ CREATE TABLE IF NOT EXISTS notice (
   CONSTRAINT chk_notice_body CHECK (CHAR_LENGTH(TRIM(body)) > 0)
 ) ENGINE=InnoDB;
 
--- 不预建登录账号；后续通过受控初始化流程生成密码哈希。
+-- SQL不预建登录账号；应用通过显式BOOTSTRAP初始化管理员并生成BCrypt哈希。
 -- IF NOT EXISTS 只负责初建，不会把已有表自动迁移成新结构。
+

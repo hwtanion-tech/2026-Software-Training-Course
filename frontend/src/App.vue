@@ -1,80 +1,47 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { getJson } from './api'
-
-const project = ref(null)
-const backend = ref(null)
-const database = ref(null)
-const loading = ref(false)
-const error = ref('')
-const databaseError = ref('')
-
-async function refresh() {
-  loading.value = true
-  error.value = ''
-  databaseError.value = ''
-  backend.value = null
-  project.value = null
-  database.value = null
-  const results = await Promise.allSettled([
-    getJson('/api/health'), getJson('/api/project'), getJson('/api/health/database'),
-  ])
-  if (results[0].status === 'fulfilled') backend.value = results[0].value
-  else error.value = '后端暂未连接。请在 backend 目录运行 mvn spring-boot:run 后重试。'
-  if (results[1].status === 'fulfilled') project.value = results[1].value
-  else error.value ||= '项目信息加载失败，请检查后端服务。'
-  if (results[2].status === 'fulfilled') database.value = results[2].value
-  else databaseError.value = results[2].reason.message
-  loading.value = false
+import { computed, onMounted, ref, watch } from 'vue'
+import { request, logout } from './api'
+import { user, project, route, go } from './state'
+import HomePage from './components/HomePage.vue'
+import PublicList from './components/PublicList.vue'
+import ArticleDetail from './components/ArticleDetail.vue'
+import LoginPage from './components/LoginPage.vue'
+import ManageContent from './components/ManageContent.vue'
+import CategoryPage from './components/CategoryPage.vue'
+const ready = ref(false), error = ref(''), leaving = ref(false)
+const parts = computed(() => route.value.split('/').filter(Boolean))
+const managed = computed(() => parts.value[0] === 'manage' || parts.value[0] === 'categories')
+const known = computed(() => ['home', 'news', 'notices', 'login', 'manage', 'categories'].includes(parts.value[0]))
+function guard() { if (ready.value && managed.value && !user.value) go('/login') }
+watch([route, user, ready], guard)
+watch(route, () => { error.value = ''; window.scrollTo(0, 0) })
+async function signOut() {
+  leaving.value = true
+  try { await logout(); user.value = null; go('/home') } catch (e) { error.value = e.message } finally { leaving.value = false }
 }
-
-onMounted(refresh)
+onMounted(async () => {
+  try {
+    const [info, session] = await Promise.all([request('/api/project'), request('/api/auth/me')])
+    project.value = info; user.value = session.user
+  } catch (e) { error.value = '无法连接后端，请确认服务已启动。' } finally { ready.value = true }
+})
 </script>
-
 <template>
-  <div class="workspace">
-    <header class="topbar">
-      <a class="brand" href="#main"><span class="brand-icon">闻</span>校园新闻系统</a>
-      <span class="stage-label">软件综合开发实训 / WEEK 01</span>
-    </header>
-    <main id="main">
-      <section class="intro">
-        <p class="eyebrow">第一周 · 需求分析与环境准备</p>
-        <h1>从一条校园消息开始</h1>
-        <p class="description">搭建校园新闻与通知的信息入口。本周先明确需求、划分角色，并打通前后端开发环境。</p>
-        <div class="stack"><span>Spring Boot</span><span>Vue 3</span><span>MySQL</span></div>
-      </section>
-
-      <section class="environment" aria-labelledby="environment-title">
-        <div class="section-heading"><h2 id="environment-title">开发环境</h2>
-          <button type="button" :disabled="loading" @click="refresh">{{ loading ? '检查中…' : '重新检查' }}</button>
-        </div>
-        <div class="status-grid" aria-live="polite">
-          <article><span class="card-label">01 / 前端</span><h3>Vue 页面已启动</h3><p><i class="dot good"></i>页面正常渲染</p></article>
-          <article><span class="card-label">02 / 后端</span><h3>Spring Boot 服务</h3>
-            <p><i class="dot" :class="{ good: backend?.status === 'UP' }"></i>{{ loading ? '正在检查' : backend?.message || '等待后端连接' }}</p></article>
-          <article><span class="card-label">03 / 数据库</span><h3>MySQL 连接</h3>
-            <p><i class="dot" :class="{ good: database?.status === 'UP' }"></i>{{ loading ? '正在检查' : database?.status === 'UP' ? '连接检查成功' : databaseError ? '检查失败' : '尚未配置连接' }}</p></article>
-        </div>
-        <p v-if="error" class="message error" role="alert">{{ error }}</p>
-        <p class="message" :class="{ error: databaseError }">{{ databaseError || database?.message || 'MySQL 状态将在检查后显示。' }}</p>
-      </section>
-
-      <template v-if="project">
-        <section class="roles" aria-labelledby="roles-title">
-          <div class="section-heading"><h2 id="roles-title">谁会使用这个系统</h2><span class="muted">需求定义 · 尚未实现鉴权</span></div>
-          <div class="role-grid"><article v-for="(role, index) in project.roles" :key="role.name">
-            <span class="role-number">0{{ index + 1 }}</span><h3>{{ role.name }}</h3><p>{{ role.description }}</p>
-          </article></div>
-        </section>
-        <div class="two-columns">
-          <section><h2>本周交付</h2><ul><li v-for="item in project.weekOneDeliverables" :key="item">{{ item }}</li></ul></section>
-          <section><h2>后续开发</h2><ul><li v-for="item in project.plannedFeatures" :key="item">{{ item }}<span class="pending">待实现</span></li></ul></section>
-        </div>
-        <section class="workflow"><h2>内容状态约定</h2><div class="states"><span v-for="state in project.contentStatuses" :key="state">{{ state }}</span></div>
-          <p class="muted">前台只展示已发布内容。状态转换和权限校验将在后续业务开发中实现。</p></section>
-      </template>
-      <footer>校园新闻及通知发布系统设计及实现 · 第一周工程骨架</footer>
-    </main>
-  </div>
+  <header class="topbar"><a class="brand" href="#/home"><span class="brand-icon">闻</span><span>校园新闻<span class="brand-sub">CAMPUS NEWS</span></span></a>
+    <nav class="main-nav" aria-label="主导航"><a href="#/home" :class="{ active: parts[0] === 'home' }">首页</a><a href="#/news" :class="{ active: parts[0] === 'news' }">校园新闻</a><a href="#/notices" :class="{ active: parts[0] === 'notices' }">通知公告</a></nav>
+    <div class="account"><template v-if="user"><a href="#/manage/news" class="manage-link">管理后台</a><span>{{ user.displayName }}</span><button :disabled="leaving" @click="signOut">退出</button></template><a v-else class="login-link" href="#/login">管理登录 ↗</a></div>
+  </header>
+  <div v-if="project?.mode === 'demo'" class="demo-strip">本机演示模式 · 内容为实训样例 · 修改会保存在本机数据库</div>
+  <main><p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="!ready" class="empty">正在连接校园新闻系统…</p>
+    <template v-else>
+      <HomePage v-if="parts[0] === 'home'" />
+      <template v-else-if="['news', 'notices'].includes(parts[0])"><ArticleDetail v-if="parts[1]" :key="route" :kind="parts[0]" :id="parts[1]" /><PublicList v-else :key="route" :kind="parts[0]" /></template>
+      <LoginPage v-else-if="parts[0] === 'login'" />
+      <ManageContent v-else-if="parts[0] === 'manage' && user && ['news', 'notices'].includes(parts[1])" :key="route" :kind="parts[1]" />
+      <CategoryPage v-else-if="parts[0] === 'categories' && user?.role === 'ADMIN'" />
+      <p v-else-if="parts[0] === 'categories' && user" class="empty error">仅管理员可以管理分类。</p>
+      <p v-else-if="!managed || !known" class="empty">页面不存在，<a href="#/home">返回首页</a>。</p>
+    </template>
+  </main>
+  <footer><a class="brand" href="#/home"><span class="brand-icon">闻</span>校园新闻</a><span>校园新闻及通知发布系统 · 软件综合开发实训</span><span>关注校园 · 连接你我</span></footer>
 </template>

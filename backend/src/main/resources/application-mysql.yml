@@ -1,0 +1,13 @@
+# 使用前手动导入database/schema.sql，不自动建表或插入演示账号。
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/campus_news?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&connectTimeout=3000&socketTimeout=5000}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:campus_app}
+    password: ${DB_PASSWORD}
+  sql:
+    init:
+      mode: never
+campus:
+  mode: mysql
+  demo-seed: false

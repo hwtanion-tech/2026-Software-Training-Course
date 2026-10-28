@@ -1,93 +1,49 @@
-# Git建仓与提交指南
+# Git 建仓与第二周提交指南
 
-已准备项目目录、源代码、文档、.gitignore和.gitattributes。未执行任何Git指令，未生成.git，未创建远程仓库。以下命令全部由你在PowerShell中手动执行。先完成本地提交即可；GitHub/Gitee推送是可选步骤。
+当前目录已有 `.git`，本地 main 与本次读取的远程 main 均以 `e084f00ea2a3856303f7cc8902776b31873b1dfc` 为基线。以下命令由你本人执行。本轮没有运行 Git 命令、创建提交或推送远程。不要再次初始化仓库。
 
-## 1 进入项目目录
+## 检查并提交第二周代码
+
+在 PowerShell 中逐条执行，先看输出再进行下一步：
 
 ```powershell
 Set-Location -LiteralPath 'G:\file\grade 4 first semester\PRACTICE\campus-news-system'
-```
-
-Set-Location是PowerShell切换目录命令。后续所有Git命令都在此目录执行，避免把整个实训文件夹及无关文档纳入仓库。
-
-## 2 初始化仓库
-
-```powershell
-git --version
-git init -b main
 git status
+git diff --stat
+git diff
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| git --version | 检查Git是否安装并显示版本 |
-| git init -b main | 在当前目录创建.git仓库数据，初始分支名为main；只执行一次 |
-| git status | 查看所在分支、未跟踪文件和暂存情况，不会修改代码 |
+| Set-Location | 切换到项目根目录；这是 PowerShell 命令 |
+| git status | 查看分支、已修改和未跟踪文件；新文件不会出现在普通 diff 中 |
+| git diff --stat | 汇总已跟踪文件的改动量 |
+| git diff | 查看尚未暂存的具体代码变化 |
 
-## 3 设置本仓库的提交者信息
-
-如果没有设置过身份，按下例执行。邮箱请替换成你自己的邮箱或GitHub提供的隐私邮箱，不要照抄占位文字。
-
-```powershell
-git config user.name '韩文涛'
-git config user.email '请替换成你的邮箱'
-```
-
-这两条命令只配置当前仓库的提交者身份，不包含--global，不改变其他仓库。它们不负责登录GitHub/Gitee。
-
-## 4 检查并提交第一周代码
-
-在运行下列命令前，确认数据库密码没有写入源码、SQL、README或截图。项目默认从环境变量取密码；.gitignore会排除本地.env及application-local配置文件，但不会自动识别其他文件中的密码。
+完成 README 中的构建测试并按验收指南确认功能后：
 
 ```powershell
-git status --short
-git add .
+git add .gitignore README.md backend frontend database docs scripts
 git diff --cached --stat
 git diff --cached
-git commit -m 'feat: 完成第一周项目骨架与需求分析'
 git status
-git log --oneline -5
+git commit -m "feat: implement week 2 campus news workflows"
+git push origin main
 ```
 
 | 命令 | 功能 |
 | --- | --- |
-| git status --short | 简洁显示新增、修改和未跟踪文件 |
-| git add . | 把当前目录中未被忽略的新增、修改和删除内容放入暂存区，不会提交或上传 |
-| git diff --cached --stat | 汇总将要提交的文件及行数变化 |
-| git diff --cached | 查看暂存区的实际改动，确认内容后再提交 |
-| git commit -m '…' | 将暂存区保存为本地历史中的一个提交，-m指定说明 |
-| git status | 提交后检查工作区是否干净 |
-| git log --oneline -5 | 查看最近5次提交的简洁记录 |
+| git add ... | 把列出的源码、文档和截图加入暂存区；忽略规则排除本地库、依赖、日志与构建目录 |
+| git diff --cached --stat | 查看本次准备提交的文件范围 |
+| git diff --cached | 检查暂存区的实际内容，包括本周新增文件 |
+| git status | 提交前再次确认分支和文件，特别注意没有密码、.local、target、node_modules |
+| git commit -m ... | 在本地创建第二周提交，此时尚未上传 |
+| git push origin main | 将本地 main 提交上传已配置的 origin；先确认 status 显示你位于 main |
 
-首次提交建议包含backend源码、frontend源码和package-lock.json、database、docs、README及根目录配置文件。不要提交node_modules、target、dist、真实密码或.local验证日志。
+如暂存了不想提交的文件，可执行 `git restore --staged -- 文件路径`，它只取消暂存，不删除工作文件。这里没有让你执行会丢弃源码的 restore 或 reset 命令。
 
-## 5 可选 上传到GitHub或Gitee
+如果推送提示远程已有更新，先执行 `git fetch origin` 查看远程状态，再执行 `git log --oneline --left-right main...origin/main` 比较双方提交。确认并处理冲突后再推送，不要强制推送。不要把占位密码写入配置文件或 commit 信息。
 
-先在网站上手动创建空仓库，名称建议campus-news-system。不要勾选自动生成README、.gitignore或License，以便与本地首次提交衔接。复制自己的HTTPS或SSH仓库地址，再执行：
+## 已有项目的更新原则
 
-```powershell
-git remote add origin '请替换成你的实际仓库地址'
-git remote -v
-git push -u origin main
-```
-
-| 命令 | 功能 |
-| --- | --- |
-| git remote add origin '…' | 给远程仓库地址设置名称origin，不会立即上传 |
-| git remote -v | 检查已配置的拉取和推送地址 |
-| git push -u origin main | 将本地main分支提交上传，并设置上游跟踪关系；可能要求你登录 |
-
-不要把令牌或密码直接写在远程URL中。如果origin已经存在，先用git remote -v确认，确需修改地址时使用git remote set-url origin '实际仓库地址'，无需重复add。
-
-## 6 第二周以后的日常提交
-
-```powershell
-git status
-git diff
-git add .
-git diff --cached
-git commit -m 'feat: 完成系统设计与数据库设计'
-git push
-```
-
-git diff查看尚未暂存的修改；git push在设置上游后把新的本地提交上传。如果尚未配置远程，跳过git push。发生推送冲突时先查看远程与本地差异，不要直接强制推送。
+第一周的 `git init`、首次 `remote add` 已完成，本周通常只需检查、暂存、提交和推送。需要核对远程时由你执行 `git remote -v`；预期 origin 指向 `https://github.com/hwtanion-tech/2026-Software-Training-Course`。

@@ -1,15 +1,32 @@
 server:
   address: 127.0.0.1
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   application:
     name: campus-news-backend
+  profiles:
+    default: demo
+  jackson:
+    time-zone: Asia/Shanghai
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 5000
+  sql:
+    init:
+      mode: never
 
 campus:
-  database:
-    # 默认关闭；服务启动不依赖本机数据库和密码。
-    enabled: ${DB_ENABLED:false}
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/campus_news?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
-    username: ${DB_USERNAME:campus_app}
-    password: ${DB_PASSWORD:}
+  mode: mysql
+  demo-seed: false
+  bootstrap:
+    enabled: ${BOOTSTRAP_ENABLED:false}
+    username: ${BOOTSTRAP_USERNAME:admin}
+    password: ${BOOTSTRAP_PASSWORD:}
