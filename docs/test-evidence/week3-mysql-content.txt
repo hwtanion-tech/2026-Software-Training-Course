@@ -1,0 +1,19 @@
+PASS 管理员真实会话登录
+PASS 数据库连接正常（mysql）
+PASS 创建分类
+PASS news 新建为草稿
+PASS 未发布内容返回404
+PASS news 编辑持久化
+PASS news 发布后公开可见
+PASS news 关键词分页
+PASS 未发布内容返回404
+PASS news 清理本脚本创建的内容
+PASS notices 新建为草稿
+PASS 未发布内容返回404
+PASS notices 编辑持久化
+PASS notices 发布后公开可见
+PASS notices 关键词分页
+PASS 未发布内容返回404
+PASS notices 清理本脚本创建的内容
+PASS 退出后会话失效
+验收通过；验收分类已停用保留。

@@ -11,10 +11,15 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import java.io.IOException;
 
 @Configuration
 public class SecurityConfig {
+    @Bean SessionRegistry sessionRegistry() { return new SessionRegistryImpl(); }
+    @Bean HttpSessionEventPublisher httpSessionEventPublisher() { return new HttpSessionEventPublisher(); }
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
     @Bean UserDetailsService userDetailsService(UserRepository users) {
         return username -> {
@@ -23,7 +28,7 @@ public class SecurityConfig {
                     .disabled(!user.enabled()).build();
         };
     }
-    @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper) throws Exception {
+    @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper,SessionRegistry registry) throws Exception {
         // 保留默认CSRF保护。Vue通过/api/auth/csrf获取令牌，登录后重新获取。
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/public/**", "/api/auth/csrf", "/api/auth/me", "/api/auth/login",
@@ -43,6 +48,9 @@ public class SecurityConfig {
                         ApiResponse.error("UNAUTHORIZED", "请先登录")))
                 .accessDeniedHandler((request,response,ex) -> json(mapper,response,403,
                         ApiResponse.error("FORBIDDEN", "无操作权限或安全令牌已失效，请刷新后重试"))))
+            .sessionManagement(session -> session.maximumSessions(-1).sessionRegistry(registry)
+                .expiredSessionStrategy(event -> json(mapper,event.getResponse(),401,
+                        ApiResponse.error("SESSION_EXPIRED","账号状态、权限或密码已变更，请重新登录"))))
             .requestCache(cache -> cache.disable());
         return http.build();
     }

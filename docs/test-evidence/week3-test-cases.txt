@@ -1,0 +1,32 @@
+第三周集成测试逐项运行记录
+日期：2026-10-28
+环境：独立H2内存数据库
+
+01 literalWildcardsAndInjectionCannotExpandSearch  通过
+02 blankAndOversizedInputAreRejected  通过
+03 healthStartsWithEmbeddedDatabase  通过
+04 accountManagementRequiresAdminAndCsrf  通过
+05 resetPasswordRevokesSessionAndOldPasswordFails  通过
+06 invalidPageAndStatusAreRejected  通过
+07 categoriesRequireAdminAndRejectDuplicateNames  通过
+08 passwordIsHashedAndNeverReturned  通过
+09 noticeHasSameOwnershipAndLifecycleRules  通过
+10 keywordCategoryAndPaginationWorkTogether  通过
+11 nonexistentAndDisabledCategoriesAreRejected  通过
+12 creatorCannotBeForged  通过
+13 publishWithdrawAndRepublishControlPublicVisibility  通过
+14 sessionSurvivesRequestsAndLogoutInvalidatesIt  通过
+15 wrongPasswordAndDisabledAccountFail  通过
+16 roleDowngradeRevokesAdminSession  通过
+17 disabledAccountSessionExpiresAndReenableCannotReuseIt  通过
+18 adminCreatesAccountAndListsWithoutSecrets  通过
+19 profileEditPreservesPasswordSessionAndContentReferences  通过
+20 adminCannotDisableOrDemoteSelf  通过
+21 editingPublishedContentReturnsToDraft  通过
+22 privateListAndDetailRejectVisitors  通过
+23 missingCsrfBlocksLoginAndWrites  通过
+24 invalidTransitionsAndPublishedDeletionAreRejected  通过
+25 ownerIsolationAndAdminOverride  通过
+26 actualCsrfEndpointSupportsLoginAndSubsequentWrite  通过
+27 duplicateUsernameAndInvalidAccountFieldsFail  通过
+28 htmlContentIsReturnedAsPlainTextAndMalformedJsonIsRejected  通过

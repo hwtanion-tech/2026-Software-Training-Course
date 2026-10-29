@@ -34,8 +34,9 @@ public class DataInitializer implements CommandLineRunner {
             users.create("other",encoder.encode("DemoOther!2026"),"另一位编辑","PUBLISHER");
             seed();
         } else if (bootstrap) {
-            if (!username.matches("[A-Za-z0-9_]{3,50}") || password.length()<12 || password.length()>64)
-                throw new IllegalStateException("初始化账号须为3至50位字母数字下划线，密码须为12至64位");
+            if (!username.matches("[A-Za-z0-9_]{3,50}") || password.isBlank() || password.length()<12 || password.length()>64
+                    || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72)
+                throw new IllegalStateException("初始化账号须为3至50位字母数字下划线，密码须为12至64位且UTF-8编码不超过72字节");
             users.create(username,encoder.encode(password),"管理员","ADMIN");
         }
     }

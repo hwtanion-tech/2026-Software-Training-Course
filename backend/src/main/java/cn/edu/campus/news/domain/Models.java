@@ -27,6 +27,18 @@ public final class Models {
     public record UserView(long id, String username, String displayName, String role) {
         public boolean admin() { return "ADMIN".equals(role); }
     }
+    public record AccountView(long id, String username, String displayName, String role, boolean enabled) { }
+    public record AccountCreate(
+            @NotBlank @Pattern(regexp="[A-Za-z0-9_]{3,50}",message="账号须为3至50位字母数字或下划线") String username,
+            @NotBlank(message="显示名称不能为空") @Size(max=50,message="显示名称最多50字") String displayName,
+            @NotNull @Pattern(regexp="ADMIN|PUBLISHER",message="角色不正确") String role,
+            @NotNull(message="请选择启用状态") Boolean enabled,
+            @NotBlank(message="初始密码不能为空") @Size(max=64,message="密码最多64位") String password) { }
+    public record AccountUpdate(
+            @NotBlank(message="显示名称不能为空") @Size(max=50,message="显示名称最多50字") String displayName,
+            @NotNull @Pattern(regexp="ADMIN|PUBLISHER",message="角色不正确") String role,
+            @NotNull(message="请选择启用状态") Boolean enabled,
+            @Size(max=64,message="密码最多64位") String password) { }
     public record Category(long id, String name, int sortOrder, boolean enabled) { }
     public record CategoryInput(@NotBlank(message="分类名称不能为空") @Size(max=50,message="分类名称最多50字") String name,
                                 @Min(value=0,message="排序不能小于0") @Max(value=9999,message="排序不能超过9999") int sortOrder,

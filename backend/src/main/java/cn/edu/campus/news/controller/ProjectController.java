@@ -25,7 +25,7 @@ public class ProjectController {
 
     @GetMapping("/health")
     public Health health() {
-        return new Health("UP", "campus-news-backend", "week2", "后端服务运行正常");
+        return new Health("UP", "campus-news-backend", "week3", "后端服务运行正常");
     }
 
     @GetMapping("/health/database")
@@ -37,9 +37,9 @@ public class ProjectController {
 
     @GetMapping("/project")
     public ApiResponse<?> project() {
-        return ApiResponse.ok(Map.of("title","校园新闻及通知发布系统设计及实现", "stage","week2", "mode",mode,
-                "features",List.of("登录鉴权","新闻及通知维护","发布撤回","查询分页","分类维护"),
-                "plannedFeatures",List.of("账号管理页面","第三周综合测试与报告")));
+        return ApiResponse.ok(Map.of("title","校园新闻及通知发布系统设计及实现", "stage","week3", "mode",mode,
+                "features",List.of("登录鉴权","新闻及通知维护","发布撤回","查询分页","分类维护","账号管理与旧会话撤销"),
+                "plannedFeatures",List.of("图片附件与富文本扩展","生产部署与性能优化")));
     }
 
     public record Health(String status, String service, String stage, String message) { }

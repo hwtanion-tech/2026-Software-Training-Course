@@ -47,3 +47,14 @@ git push origin main
 ## 已有项目的更新原则
 
 第一周的 `git init`、首次 `remote add` 已完成，本周通常只需检查、暂存、提交和推送。需要核对远程时由你执行 `git remote -v`；预期 origin 指向 `https://github.com/hwtanion-tech/2026-Software-Training-Course`。
+
+## 第三周提交
+
+第三周新增账号管理、会话撤销、综合测试及验收材料。沿用上文检查和暂存步骤，本周提交说明可用：
+
+```powershell
+git commit -m "feat: complete week 3 account management and acceptance"
+git push origin main
+```
+
+项目外的成果文件包含Word报告、验收指南和源码压缩包，按课程要求单独提交；需要加入仓库时由本人选择。此次没有代为执行任何Git指令。

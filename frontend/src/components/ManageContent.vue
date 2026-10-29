@@ -44,7 +44,7 @@ onMounted(async () => {
 </script>
 <template>
   <section class="page-head compact"><p class="eyebrow">CONTENT MANAGEMENT</p><div class="section-heading"><div><h1>{{ kind === 'news' ? '新闻管理' : '通知管理' }}</h1><p>{{ user?.role === 'ADMIN' ? '管理全部发布人员的内容。' : '此处仅显示你创建的内容。' }}</p></div><button class="primary" :disabled="busy" @click="start()">＋ 新建{{ kind === 'news' ? '新闻' : '通知' }}</button></div></section>
-  <nav class="admin-tabs"><a href="#/manage/news" :class="{ active: kind === 'news' }">新闻管理</a><a href="#/manage/notices" :class="{ active: kind === 'notices' }">通知管理</a><a v-if="user?.role === 'ADMIN'" href="#/categories">分类管理</a></nav>
+  <nav class="admin-tabs"><a href="#/manage/news" :class="{ active: kind === 'news' }">新闻管理</a><a href="#/manage/notices" :class="{ active: kind === 'notices' }">通知管理</a><a v-if="user?.role === 'ADMIN'" href="#/categories">分类管理</a><a v-if="user?.role === 'ADMIN'" href="#/accounts">账号管理</a></nav>
   <p v-if="error" role="alert" class="error">{{ error }}</p><p v-if="message" role="status" class="success">{{ message }}</p>
   <form v-if="editing" class="editor-form" @submit.prevent="save"><div class="section-heading"><h2>{{ editingId ? '编辑内容' : '新建内容' }}</h2><button type="button" :disabled="busy" @click="editing = false">取消编辑</button></div>
     <p v-if="oldStatus === 'PUBLISHED'" class="form-note">修改已发布内容后会自动保存为草稿，需再次发布。</p>
@@ -63,3 +63,4 @@ onMounted(async () => {
   </tbody></table></div><nav class="pagination" aria-label="管理列表分页"><span>共 {{ result.total }} 条</span><button :disabled="page <= 1 || busy" @click="turn(-1)">上一页</button><span>{{ page }} / {{ result.pages || 1 }}</span><button :disabled="page >= result.pages || busy" @click="turn(1)">下一页</button></nav></template>
   <div v-if="deleting" class="dialog-backdrop"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title"><h2 id="delete-title">确认删除内容</h2><p>将删除“{{ deleting.title }}”，此操作无法在页面内撤销。</p><div class="dialog-actions"><button :disabled="busy" @click="deleting = null">取消</button><button class="danger" :disabled="busy" @click="action(deleting, 'delete')">确认删除</button></div></section></div>
 </template>
+

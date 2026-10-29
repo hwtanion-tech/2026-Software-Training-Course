@@ -8,10 +8,10 @@ import ArticleDetail from './components/ArticleDetail.vue'
 import LoginPage from './components/LoginPage.vue'
 import ManageContent from './components/ManageContent.vue'
 import CategoryPage from './components/CategoryPage.vue'
+import AccountPage from './components/AccountPage.vue'
 const ready = ref(false), error = ref(''), leaving = ref(false)
 const parts = computed(() => route.value.split('/').filter(Boolean))
-const managed = computed(() => parts.value[0] === 'manage' || parts.value[0] === 'categories')
-const known = computed(() => ['home', 'news', 'notices', 'login', 'manage', 'categories'].includes(parts.value[0]))
+const managed = computed(() => ['manage', 'categories', 'accounts'].includes(parts.value[0]))
 function guard() { if (ready.value && managed.value && !user.value) go('/login') }
 watch([route, user, ready], guard)
 watch(route, () => { error.value = ''; window.scrollTo(0, 0) })
@@ -39,8 +39,9 @@ onMounted(async () => {
       <LoginPage v-else-if="parts[0] === 'login'" />
       <ManageContent v-else-if="parts[0] === 'manage' && user && ['news', 'notices'].includes(parts[1])" :key="route" :kind="parts[1]" />
       <CategoryPage v-else-if="parts[0] === 'categories' && user?.role === 'ADMIN'" />
-      <p v-else-if="parts[0] === 'categories' && user" class="empty error">仅管理员可以管理分类。</p>
-      <p v-else-if="!managed || !known" class="empty">页面不存在，<a href="#/home">返回首页</a>。</p>
+      <AccountPage v-else-if="parts[0] === 'accounts' && user?.role === 'ADMIN'" />
+      <p v-else-if="['categories', 'accounts'].includes(parts[0]) && user" class="empty error">仅管理员可以进入此页面。</p>
+      <p v-else class="empty">页面不存在，<a href="#/home">返回首页</a>。</p>
     </template>
   </main>
   <footer><a class="brand" href="#/home"><span class="brand-icon">闻</span>校园新闻</a><span>校园新闻及通知发布系统 · 软件综合开发实训</span><span>关注校园 · 连接你我</span></footer>

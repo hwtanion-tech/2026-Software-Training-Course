@@ -35,9 +35,12 @@ class ProjectApiTest {
     @Autowired CategoryRepository categories;
     @Autowired ContentRepository contents;
     @Autowired PasswordEncoder encoder;
+    @Autowired org.springframework.security.core.session.SessionRegistry sessionRegistry;
     long editorId, otherId, categoryId, ownNewsId, otherNewsId;
 
     @BeforeEach void setup() {
+        for(Object principal:sessionRegistry.getAllPrincipals())
+            for(var session:sessionRegistry.getAllSessions(principal,true)) sessionRegistry.removeSessionInformation(session.getSessionId());
         jdbc.update("DELETE FROM news"); jdbc.update("DELETE FROM notice");
         jdbc.update("DELETE FROM news_category"); jdbc.update("DELETE FROM sys_user");
         users.create("editor",encoder.encode("TestEditor!2026"),"编辑","PUBLISHER");
@@ -64,7 +67,7 @@ class ProjectApiTest {
     void publish(long id,MockHttpSession session) throws Exception { send(post("/api/manage/news/"+id+"/publish"),session,null).andExpect(status().isOk()); }
 
     @Test void healthStartsWithEmbeddedDatabase() throws Exception {
-        mvc.perform(get("/api/health")).andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("week2"));
+        mvc.perform(get("/api/health")).andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("week3"));
         send(get("/api/health/database"),login("admin","TestAdmin!2026"),null)
                 .andExpect(jsonPath("$.data.status").value("UP")).andExpect(jsonPath("$.data.mode").value("demo"));
     }
@@ -198,5 +201,91 @@ class ProjectApiTest {
         send(post("/api/admin/categories"),admin,new CategoryInput("新分类",2,true)).andExpect(status().isOk());
         send(post("/api/admin/categories"),admin,new CategoryInput("新分类",2,true)).andExpect(status().isConflict());
         send(put("/api/admin/categories/"+categoryId),admin,new CategoryInput("已停用",1,false)).andExpect(status().isOk());
+    }
+    @Test void accountManagementRequiresAdminAndCsrf() throws Exception {
+        mvc.perform(get("/api/admin/accounts")).andExpect(status().isUnauthorized());
+        send(get("/api/admin/accounts"),editor(),null).andExpect(status().isForbidden());
+        var admin=login("admin","TestAdmin!2026");
+        mvc.perform(post("/api/admin/accounts").session(admin).contentType("application/json")
+                .content(mapper.writeValueAsString(new AccountCreate("new_editor","编辑","PUBLISHER",true,"NewEditor!2026"))))
+                .andExpect(status().isForbidden());
+    }
+    @Test void adminCreatesAccountAndListsWithoutSecrets() throws Exception {
+        var admin=login("admin","TestAdmin!2026");
+        send(post("/api/admin/accounts"),admin,new AccountCreate("new_editor","新增编辑","PUBLISHER",true,"NewEditor!2026"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.username").value("new_editor"))
+                .andExpect(jsonPath("$.data.password").doesNotExist()).andExpect(jsonPath("$.data.passwordHash").doesNotExist());
+        assertTrue(encoder.matches("NewEditor!2026",users.byUsername("new_editor").orElseThrow().passwordHash()));
+        send(get("/api/admin/accounts").param("keyword","新增").param("size","1"),admin,null)
+                .andExpect(jsonPath("$.data.total").value(1)).andExpect(jsonPath("$.data.items[0].enabled").value(true))
+                .andExpect(jsonPath("$.data.items[0].passwordHash").doesNotExist());
+        mvc.perform(get("/api/auth/me").session(login("new_editor","NewEditor!2026")))
+                .andExpect(jsonPath("$.data.authenticated").value(true));
+    }
+    @Test void duplicateUsernameAndInvalidAccountFieldsFail() throws Exception {
+        var admin=login("admin","TestAdmin!2026");
+        send(post("/api/admin/accounts"),admin,new AccountCreate("editor","编辑","PUBLISHER",true,"NewEditor!2026")).andExpect(status().isConflict());
+        send(post("/api/admin/accounts"),admin,new AccountCreate("不合法账号","编辑","PUBLISHER",true,"NewEditor!2026")).andExpect(status().isBadRequest());
+        send(post("/api/admin/accounts"),admin,new AccountCreate("valid_user","  ","PUBLISHER",true,"NewEditor!2026")).andExpect(status().isBadRequest());
+        send(post("/api/admin/accounts"),admin,new AccountCreate("valid_user","编辑","ROOT",true,"NewEditor!2026")).andExpect(status().isBadRequest());
+        send(post("/api/admin/accounts"),admin,new AccountCreate("valid_user","编辑","PUBLISHER",true,"short")).andExpect(status().isBadRequest());
+        send(post("/api/admin/accounts"),admin,new AccountCreate("valid_user","编辑","PUBLISHER",true,"密".repeat(25))).andExpect(status().isBadRequest());
+        send(get("/api/admin/accounts").param("size","51"),admin,null).andExpect(status().isBadRequest());
+    }
+    @Test void disabledAccountSessionExpiresAndReenableCannotReuseIt() throws Exception {
+        var old=editor(); var admin=login("admin","TestAdmin!2026");
+        send(put("/api/admin/accounts/"+editorId),admin,new AccountUpdate("编辑","PUBLISHER",false,""))
+                .andExpect(status().isOk());
+        // 先重新启用，再尝试旧会话，验证不是仅在停用期间检查 enabled。
+        send(put("/api/admin/accounts/"+editorId),admin,new AccountUpdate("编辑","PUBLISHER",true,""))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/manage/news").session(old)).andExpect(status().isUnauthorized());
+        assertTrue(old.isInvalid());
+        mvc.perform(get("/api/manage/news").session(editor())).andExpect(status().isOk());
+    }
+    @Test void roleDowngradeRevokesAdminSession() throws Exception {
+        users.create("admin_two",encoder.encode("AdminTwo!2026"),"第二管理员","ADMIN");
+        long id=users.byUsername("admin_two").orElseThrow().id();
+        var target=login("admin_two","AdminTwo!2026");
+        send(put("/api/admin/accounts/"+id),login("admin","TestAdmin!2026"),new AccountUpdate("第二管理员","PUBLISHER",true,null))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/admin/accounts").session(target)).andExpect(status().isUnauthorized());
+        send(get("/api/admin/accounts"),login("admin_two","AdminTwo!2026"),null).andExpect(status().isForbidden());
+    }
+    @Test void resetPasswordRevokesSessionAndOldPasswordFails() throws Exception {
+        var old=editor();
+        send(put("/api/admin/accounts/"+editorId),login("admin","TestAdmin!2026"),
+                new AccountUpdate("新名称","PUBLISHER",true,"ChangedEditor!2026")).andExpect(status().isOk());
+        mvc.perform(get("/api/manage/news").session(old)).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/login").with(csrf()).param("username","editor").param("password","TestEditor!2026"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/auth/me").session(login("editor","ChangedEditor!2026")))
+                .andExpect(jsonPath("$.data.user.displayName").value("新名称"));
+    }
+    @Test void adminCannotDisableOrDemoteSelf() throws Exception {
+        var admin=login("admin","TestAdmin!2026"); long id=users.byUsername("admin").orElseThrow().id();
+        send(put("/api/admin/accounts/"+id),admin,new AccountUpdate("管理员","ADMIN",false,null)).andExpect(status().isConflict());
+        send(put("/api/admin/accounts/"+id),admin,new AccountUpdate("管理员","PUBLISHER",true,null)).andExpect(status().isConflict());
+        assertEquals(1,users.enabledAdmins());
+    }
+    @Test void profileEditPreservesPasswordSessionAndContentReferences() throws Exception {
+        var session=editor(); String hash=users.byId(editorId).orElseThrow().passwordHash();
+        send(put("/api/admin/accounts/"+editorId),login("admin","TestAdmin!2026"),new AccountUpdate("更新名称","PUBLISHER",true,""))
+                .andExpect(status().isOk());
+        assertEquals(hash,users.byId(editorId).orElseThrow().passwordHash());
+        mvc.perform(get("/api/manage/news/"+ownNewsId).session(session)).andExpect(jsonPath("$.data.creatorName").value("更新名称"));
+        send(put("/api/admin/accounts/9999999"),login("admin","TestAdmin!2026"),new AccountUpdate("名称","PUBLISHER",true,null))
+                .andExpect(status().isNotFound());
+    }
+    @Test void htmlContentIsReturnedAsPlainTextAndMalformedJsonIsRejected() throws Exception {
+        String text="<script>alert('x')</script>\n第二行"; var session=editor();
+        var response=send(post("/api/manage/news"),session,new ContentInput("纯文本测试",null,text,categoryId,"作者",null))
+                .andExpect(status().isOk()).andReturn();
+        long id=mapper.readTree(response.getResponse().getContentAsString()).path("data").path("id").asLong();
+        publish(id,session);
+        mvc.perform(get("/api/public/news/"+id)).andExpect(jsonPath("$.data.body").value(text));
+        mvc.perform(post("/api/manage/news").session(session).with(csrf()).contentType("application/json").content("{"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/public/news/9999999")).andExpect(status().isNotFound());
     }
 }
